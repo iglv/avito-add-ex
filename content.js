@@ -2,19 +2,8 @@ function selectCategory(category) {
   console.log('Ждем загрузки кнопок категорий...');
 
   const findAndClickCategory = () => {
-    // Ищем все кнопки на странице для отладки
-    const allButtons = document.querySelectorAll('button');
-    console.log('Всего кнопок на странице:', allButtons.length);
-    allButtons.forEach((btn) => {
-      console.log('Кнопка:', {
-        text: btn.textContent,
-        dataMarker: btn.getAttribute('data-marker'),
-        class: btn.className,
-      });
-    });
-
     const buttons = document.querySelectorAll('[data-marker="category-wizard/button"]');
-    console.log('Найдено кнопок по старому селектору:', buttons.length);
+    console.log('Найдено кнопок:', buttons.length);
 
     if (buttons.length > 0) {
       console.log('Ищем категорию:', category);
@@ -26,7 +15,8 @@ function selectCategory(category) {
           return true;
         }
       }
-      console.log('Категория не найдена');
+      console.log('Категория не найдена, пробуем еще раз через 1 секунду');
+      setTimeout(findAndClickCategory, 1000);
       return false;
     } else {
       console.log('Кнопки еще не загрузились, ждем...');
@@ -35,6 +25,22 @@ function selectCategory(category) {
     }
   };
 
+  // Создаем MutationObserver для отслеживания изменений в DOM
+  const observer = new MutationObserver((mutations, obs) => {
+    const buttons = document.querySelectorAll('[data-marker="category-wizard/button"]');
+    if (buttons.length > 0) {
+      findAndClickCategory();
+      obs.disconnect(); // Отключаем observer после нахождения кнопок
+    }
+  });
+
+  // Начинаем наблюдение за изменениями в DOM
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  // Также пробуем найти категорию сразу
   findAndClickCategory();
 }
 
@@ -57,12 +63,6 @@ function setTitle(title) {
       typeChar(0);
     } else {
       console.log('Поле пока не появилось, ждем...');
-      // Выведем все input'ы на странице для отладки
-      const allInputs = document.querySelectorAll('input');
-      console.log('Найдено инпутов на странице:', allInputs.length);
-      allInputs.forEach((input) => {
-        console.log('Input:', input.name, input.id, input.getAttribute('data-marker'));
-      });
       setTimeout(waitForInput, 500);
     }
   };
@@ -70,11 +70,14 @@ function setTitle(title) {
   waitForInput();
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Получено сообщение:', message);
-  if (message.action === 'selectCategory') {
-    selectCategory(message.category);
-  } else if (message.action === 'setTitle') {
-    setTitle(message.title);
-  }
+// Ждем полной загрузки страницы
+document.addEventListener('DOMContentLoaded', () => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Получено сообщение:', message);
+    if (message.action === 'selectCategory') {
+      selectCategory(message.category);
+    } else if (message.action === 'setTitle') {
+      setTitle(message.title);
+    }
+  });
 });
