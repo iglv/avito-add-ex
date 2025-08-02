@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Avito Adder",
+  "version": "1.0",
+  "description": "Помощник для добавления объявлений на Авито",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.avito.ru/*"
+  ],
+  "action": {
+    "default_title": "Открыть Avito Adder",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.avito.ru/*"],
+      "js": ["content.js"]
+    }
+  ]
+} 

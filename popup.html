@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
+  <style>
+    body {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    #jsonInput {
+      width: 100%;
+      height: 300px;
+      margin: 10px 0;
+      padding: 10px;
+      font-family: monospace;
+    }
+  </style>
+  <script src="popup.js" defer></script>
+</head>
+<body>
+  <textarea id="jsonInput" placeholder="Вставьте JSON данные здесь">{
+  "title": "Кроссовки Nike Air Max",
+  "category": "Личные вещи",
+  "description": "Новые кроссовки Nike Air Max. Размер 42. Оригинал, с коробкой и чеками."
+}</textarea>
+  <button id="fillForm">Заполнить форму</button>
+</body>
+</html> 
