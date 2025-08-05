@@ -1,83 +1,66 @@
-function selectCategory(category) {
-  console.log('Ждем загрузки кнопок категорий...');
+// Функция для имитации человеческого ввода
+function typeText(element, text) {
+  const delay = Math.random() * (200 - 100) + 100; // Случайная задержка между 100-200мс
 
-  const findAndClickCategory = () => {
-    const buttons = document.querySelectorAll('[data-marker="category-wizard/button"]');
-    console.log('Найдено кнопок:', buttons.length);
+  for (let i = 0; i < text.length; i++) {
+    setTimeout(() => {
+      element.value = text.substring(0, i + 1);
+      element.dispatchEvent(new Event('input', {bubbles: true}));
+    }, delay * i);
+  }
+}
 
-    if (buttons.length > 0) {
-      console.log('Ищем категорию:', category);
-      for (const button of buttons) {
-        console.log('Проверяем кнопку:', button.textContent);
-        if (button.textContent.includes(category)) {
-          console.log('Нашли нужную категорию, кликаем');
-          button.click();
-          return true;
+// Функция для подсветки и клика по категории
+function highlightAndClickCategory(categoryName) {
+  const buttons = document.querySelectorAll('[data-marker="category-wizard/button"]');
+  let categoryButton = null;
+
+  buttons.forEach((button) => {
+    if (button.textContent.trim() === categoryName) {
+      categoryButton = button;
+      button.style.backgroundColor = '#ffeb3b';
+      setTimeout(() => {
+        button.style.backgroundColor = '';
+        button.click();
+      }, 1000);
+    }
+  });
+
+  return categoryButton !== null;
+}
+
+// Слушатель сообщений от popup.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'fillForm') {
+    const data = request.data;
+
+    // Ждем загрузки формы
+    setTimeout(() => {
+      // Выбор категории
+      if (data.category) {
+        const categoryFound = highlightAndClickCategory(data.category);
+        if (!categoryFound) {
+          console.error('Категория не найдена:', data.category);
         }
       }
-      console.log('Категория не найдена, пробуем еще раз через 1 секунду');
-      setTimeout(findAndClickCategory, 1000);
-      return false;
-    } else {
-      console.log('Кнопки еще не загрузились, ждем...');
-      setTimeout(findAndClickCategory, 1000);
-      return false;
-    }
-  };
 
-  // Создаем MutationObserver для отслеживания изменений в DOM
-  const observer = new MutationObserver((mutations, obs) => {
-    const buttons = document.querySelectorAll('[data-marker="category-wizard/button"]');
-    if (buttons.length > 0) {
-      findAndClickCategory();
-      obs.disconnect(); // Отключаем observer после нахождения кнопок
-    }
-  });
-
-  // Начинаем наблюдение за изменениями в DOM
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-
-  // Также пробуем найти категорию сразу
-  findAndClickCategory();
-}
-
-function setTitle(title) {
-  console.log('Ждем появления поля ввода...');
-
-  const waitForInput = () => {
-    const titleInput = document.querySelector('input[name="title"]');
-    if (titleInput) {
-      console.log('Поле найдено, начинаем ввод');
-      let currentText = '';
-      const typeChar = (index) => {
-        if (index < title.length) {
-          currentText += title[index];
-          titleInput.value = currentText;
-          titleInput.dispatchEvent(new Event('input', {bubbles: true}));
-          setTimeout(() => typeChar(index + 1), 100);
+      // Заполнение названия
+      setTimeout(() => {
+        const titleInput = document.querySelector('input[name="title"]');
+        if (titleInput) {
+          typeText(titleInput, data.title);
         }
-      };
-      typeChar(0);
-    } else {
-      console.log('Поле пока не появилось, ждем...');
-      setTimeout(waitForInput, 500);
-    }
-  };
 
-  waitForInput();
-}
+        // Заполнение описания
+        const descriptionInput = document.querySelector('textarea[name="description"]');
+        if (descriptionInput) {
+          setTimeout(() => {
+            typeText(descriptionInput, data.description);
+          }, 1000);
+        }
+      }, 2000);
+    }, 1000);
 
-// Ждем полной загрузки страницы
-document.addEventListener('DOMContentLoaded', () => {
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Получено сообщение:', message);
-    if (message.action === 'selectCategory') {
-      selectCategory(message.category);
-    } else if (message.action === 'setTitle') {
-      setTitle(message.title);
-    }
-  });
+    sendResponse({status: 'ok'});
+  }
 });

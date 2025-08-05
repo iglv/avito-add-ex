@@ -1,29 +1,31 @@
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('fillForm').addEventListener('click', async () => {
+  const fillFormButton = document.getElementById('fillForm');
+  const jsonInput = document.getElementById('jsonInput');
+
+  fillFormButton.addEventListener('click', async () => {
     try {
-      const jsonInput = document.getElementById('jsonInput').value;
-      const data = JSON.parse(jsonInput);
+      // Получаем данные из текстового поля
+      const data = JSON.parse(jsonInput.value);
 
-      // Открываем страницу добавления объявления в новой вкладке
-      const newTab = await chrome.tabs.create({url: 'https://www.avito.ru/additem'});
+      // Получаем активную вкладку
+      const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
 
-      // Ждем загрузки страницы и выбираем категорию
-      setTimeout(() => {
-        chrome.tabs.sendMessage(newTab.id, {
-          action: 'selectCategory',
-          category: data.category,
-        });
+      // Если мы не на странице Авито, переходим на нее
+      if (!tab.url.includes('avito.ru/additem')) {
+        await chrome.tabs.update(tab.id, {url: 'https://www.avito.ru/additem'});
 
-        // Ждем немного после выбора категории и вводим название
-        setTimeout(() => {
-          chrome.tabs.sendMessage(newTab.id, {
-            action: 'setTitle',
-            title: data.title,
-          });
-        }, 5000);
-      }, 2000);
+        // Ждем загрузки страницы
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+
+      // Отправляем данные в content script
+      await chrome.tabs.sendMessage(tab.id, {
+        action: 'fillForm',
+        data: data,
+      });
     } catch (error) {
-      alert('Ошибка: ' + error.message);
+      console.error('Ошибка:', error);
+      alert('Произошла ошибка. Проверьте формат JSON данных.');
     }
   });
 });
